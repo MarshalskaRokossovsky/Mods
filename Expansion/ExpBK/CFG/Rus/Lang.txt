@@ -1,3 +1,25 @@
+BKSpam ^{
+    1=Внимание! Невероятная акция для всех держателей карты "Кредитная премиальная"! Скидки до 1% на всю линейку бытовой техники в магазинах Дольдо-ральдо! Спешите!
+    2=Уважаемый Держатель Карты! Не забывайте, что для вашей карты доступна программа получения кэш-бэка! Для того, чтобы её активировать, пройдите по ссылке: https://vkb-bank.su/bistraya-podgotovka-stvolnoy-artillerii
+    3=Просим прощения за сбой в работе нашего сайта и дарим кэшбэк 0.001% на все категории товаров! Воспользуйтесь возможностью как можно скорее!
+    Count=3
+}
+Invests ^{
+    Transports=---
+    Transports=Профинансировать строительство торгового флота в системе star (money cr.)
+    Colonisation=---
+    Colonisation=Профинансировать заселение необитаемой планеты в одной из систем Коалиции
+    Economics=---
+    Economics=Проучаствовать в индустриализации одной из планет Коалиции
+    Warr=---
+    Warr=Профинансировать строительство крупного военного флота в системе star (money cr.)
+    Flagship=---
+    Flagship=Профинансировать строительство крупных военных кораблей в системе star (money cr.)
+    Pirate=---
+    Pirate=Профинансировать "вольных пилотов" в системе star (money cr.)
+    Militia=---
+    Militia=Собрать ополчение в системе star (money cr.)
+}
 FormRuins ^{
     BK ^{
         AddDebtContinue=Постойте... В компьютере напротив вашего имени стоит красный "CR". Этот плачевный факт означает то, что вы являетесь злостным неплательщиком кредитов. Мы требуем немедленного возврата наших денег! Пока это требование не будет выполнено, вам запрещается вести здесь какую-либо деятельность.
@@ -205,6 +227,28 @@ ShipInfo ^{
                 OnActCodeTypes=t_OnStep,t_OnShipSellsGoods,t_OnEnteringForm,t_OnReEnteringForm,t_OnLeavingForm
                 OnActStepTypes=11
             }
+            ExpBK_NoSelling ^{
+                Description=
+                Icon=0
+                Name=Запрет игроку нормально продавать шмот и товары
+                OnActCode ^{
+                    01=if(PlayerDebtCnt() > 1)
+                    02 ^{
+                        01=if(!GetShipRuins(Player())) exit;
+                        02=if(ShipType(GetShipRuins(Player())) != 'BK') exit;
+                        03=MessageBox('Так-так-так, рейнджер... Значит, торгуете? А как насчёт выплаты кредита? Не хотите ли уплатить долг? Нет? Ну, что же, тогда, пожалуй, и мы не уплатим деньги за проданные вами товары. Ловко, а?');
+                        04=ShipMoney(Player(),ShipMoney(Player()) - ItemCost(ScriptItemActObject1()));
+                        05=if(PlayerDebt() > (ItemCost(ScriptItemActObject1()) * 40 / 100)) PlayerDebt(PlayerDebt()) - (ItemCost(ScriptItemActObject1()) * 40 / 100));
+                        06=else
+                        07 ^{
+                            01=PlayerDebt(0);
+                            02=PlayerDebtCnt(0);
+                            03=PlayerDebtDate(0);
+                        }
+                    }
+                }
+                OnActCodeTypes=t_OnShipSellsGoods
+            }
         }
         DepositInfo ^{
             Name=Депозит
@@ -220,7 +264,8 @@ UselessItems ^{
         Cost=Mini
         Name=Кредитная карта
         OnActCode ^{
-            01=if(Rnd(1,100) == 100) ^{
+            01=if(Rnd(1,100) == 100) 
+            02 ^{
                 01=int rand;
                 02=rand=Rnd(1,int(CT('BKSpam.Count')));
                 03=Sound('NewMsg');
@@ -250,10 +295,23 @@ UselessItems ^{
         Size=1
         Text=Кредитная карточка с номером <Data3>, выданная бизнес-центром на имя рейнджера name. Лимит - <Data2> cr., уже истрачено <Data1> cr.
     }
-}
-BKSpam ^{
-    1=Внимание! Невероятная акция для всех держателей карты "Кредитнач премиальная"! Скидки до 1% на всю линейку бытовой техники в магазинах Дольдо-ральдо! Спешите!
-    2=Уважаемый Держатель Карты! Не забывайте, что для вашей карты доступна программа получения кэш-бэка! Для того, чтобы её активировать, пройдите по ссылке: https://vkb-bank.su/bistraya-podgotovka-stvolnoy-artillerii
-    3=Просим прощения за сбо в работе нашего сайта и дарим кэшбэк 0.001% на все категории товаров! Воспользуйтесь возможностью как можно скорее!
-    Count=3
+    Usl_BlockedCreditka ^{
+        Cost=Mini
+        Name=Заблокированная кредитная карта
+        OnActCode ^{
+            01=if(Rnd(1,100) == 100) ^{
+                01=int rand;
+                02=rand=Rnd(1,int(CT('BKSpam.Count')));
+                03=Sound('NewMsg');
+                04=NewsAdd(CT('BKSpam.'+rand));
+            }
+        }
+        OnActCodeTypes=t_OnStep
+        OnActStepTypes=11
+        OnUseCode ^{
+            01=MessageBox('Кредитка заблокирована. Похоже на то, что вы не можете больше подтвердить свою личность. Или же она отличается от указанной на карточке.');
+        Owner=People
+        Size=1
+        Text=Кредитная карточка с номером <Data3>, выданная бизнес-центром на имя рейнджера name. Лимит - <Data2> cr., уже истрачено <Data1> cr.
+    }
 }

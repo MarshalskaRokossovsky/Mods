@@ -1662,7 +1662,57 @@ ShipInfo ^{
                         11=for(i = 0; i < quant; i = i + 1)
                         12 ^{
                             01=tranc = IdToShip(GetParFromString(allId, ',', i, 0));
-                            02=if(!tranc) throw 'Tranc #' + (i + 1) + ' (Id' + tranc + ') of ' + Name(owner) + ' (Id' + Id(owner) + ') is missing!';
+                            02=if(!tranc)
+                            03 ^{
+                                01=tranc = ScriptItemActShip();
+                                02=owner = TranclucatorData(tranc, 'Proprietor');
+                                03=if(owner)
+                                04 ^{
+                                    01=unknown tarr = newarray(1);
+                                    02=infos = ShipFindCustomShipInfoByType(owner, 'TrancNPCOwnerInfo');
+                                    03=quant = ShipCustomShipInfoData(owner, infos, 3);
+                                    04=allId = ShipCustomShipInfoTextData(owner, infos, 1);
+                                    05=launched = ShipCustomShipInfoTextData(owner, infos, 2);
+                                    06=status = ShipCustomShipInfoTextData(owner, infos, 3);
+                                    07=dword trancId = Id(tranc);
+                                    08=for(i = 0; i < quant; i = i + 1)
+                                    09 ^{
+                                        01=dword tempId = GetParFromString(allId, ',', i, 0);
+                                        02=if(trancId == tempId)
+                                        03 ^{
+                                            01=launched = substr(launched, 0, i) + '' + substr(launched, i + 1);
+                                            02=ShipCustomShipInfoTextData(owner, infos, 2, launched);
+                                            03=status = substr(status, 0, i) + '' + substr(status, i + 1);
+                                            04=ShipCustomShipInfoTextData(owner, infos, 3, status);
+                                        }
+                                        04=else ArrayAdd(tarr, tempId);
+                                    }
+                                    10=quant = quant - 1;
+                                    11=ShipCustomShipInfoData(owner, infos, 3, quant);
+                                    12=allId = '';
+                                    13=for(i = 1; i <= quant; i = i + 1)
+                                    14 ^{
+                                        01=if(i < quant) allId = allId + tarr[i] + ',';
+                                        02=else allId = allId + tarr[i];
+                                    }
+                                    15=ShipCustomShipInfoTextData(owner, infos, 1, allId);
+                                    16=for(i = 1; i < ShipItems(owner); i = i + 1)
+                                    17 ^{
+                                        01=item = ShipItems(owner, i);
+                                        02=if(EquipmentImageName(item) == 'WeightReserve')
+                                        03 ^{
+                                            01=ItemSize(item, ItemSize(item) - TranclucatorData(tranc, 'ArtSize'));
+                                            02=if(ItemSize(item) < 0) ItemSize(item, 0);
+                                            03=break;
+                                        }
+                                    }
+                                    18=for(i = 0; i < ShipArts(tranc); i = i + 1)
+                                    19 ^{
+                                        01=item = ShipArts(tranc, i);
+                                        02=if(RndObject(1, 100, tranc) > 20) NoDropItem(item, 1);
+                                    }
+                                }
+                            }
                         }
                     }
                     05=else if(ScriptItemActionType(t_OnTrancPacking))
@@ -2587,6 +2637,49 @@ ShipInfo ^{
                 OnActCodeTypes=t_OnStep,t_OnLeavingForm,t_OnPlayerTalkedWithShip,t_OnShipTalkedWithPlayer
                 OnActStepTypes=11
             }
+            TrancRun ^{
+                Description=Инфошка, заставляющая транков убегать на склад, если им плохо
+                Icon=0
+                Name=
+                OnActCode ^{
+                    01=int min_dmg = (ShipCustomShipInfoData(0,CurInfo(),1) * 25);
+                    02=if(HullDamage(ScriptItemActShip()) > min_dmg && min_dmg != 0 && ShipInNormalSpace(ScriptItemActShip()))
+                    03 ^{
+                        01=if(StarOwner(ShipStar(ScriptItemActShip())) != 0 && StarOwner(ShipStar(ScriptItemActShip())) != 2) exit;
+                        02=int path = 10000000,i,j;
+                        03=dword targ;
+                        04=if(ShipCustomShipInfoData(ScriptItemActShip(),'TrancRun',2) != 2)
+                        05 ^{
+                            01=for(i=0;StarPlanets(ShipStar(ScriptItemActShip()))>i;i=i+1)
+                            02 ^{
+                                01=if(PlanetOwner(StarPlanets(ShipStar(ScriptItemActShip()),i)) > 4) continue;
+                                02=if(Dist(ScriptItemActShip(),StarPlanets(ShipStar(ScriptItemActShip()),i)) < path)
+                                03 ^{
+                                    01=path = Dist(ScriptItemActShip(),StarPlanets(ShipStar(ScriptItemActShip()),i));
+                                    02=targ = StarPlanets(ShipStar(ScriptItemActShip()),i);
+                                }
+                            }
+                        }
+                        05=if(ShipCustomShipInfoData(ScriptItemActShip(),'TrancRun',2) != 1)
+                        06 ^{
+                            01=for(i=0;StarShips(ShipStar(ScriptItemActShip()))>i;i=i+1)
+                            02 ^{
+                                01=if(ShipTypeN(StarShips(ShipStar(ScriptItemActShip()),i)) < 6) continue;
+                                02=if(ShipTypeN(StarShips(ShipStar(ScriptItemActShip()),i)) == t_UB && !ShipOnSidePirateClan(Player())) continue;
+                                03=if(Dist(ScriptItemActShip(),StarShips(ShipStar(ScriptItemActShip()),i)) < path)
+                                04 ^{
+                                    01=path = Dist(ScriptItemActShip(),StarShips(ShipStar(ScriptItemActShip()),i));
+                                    02=targ = StarShips(ShipStar(ScriptItemActShip()),i);
+                                }
+                            }
+                        }
+                        07=if(ShipSlots(ScriptItemActShip(),8) && ShipCustomShipInfoData(ScriptItemActShip(),'TrancRun',3,1)) OrderForsage(ScriptItemActShip(),1);
+                        08=OrderLanding(ScriptItemActShip(),targ,99999);
+                        09=NewsAdd(Name(ScriptItemActShip()) + ' был атакован в системе ' + Name(ShipStar(ScriptItemActShip())) + ' и отправляется на посадку!');
+                    }
+                }
+                OnActCodeTypes=t_OnStep
+                OnActStepTypes=11
         }
     }
 }
@@ -2702,7 +2795,10 @@ ShipName ^{
         9=ГОСТ
         90=Сэр Репа
         91=Клумбарь
-        Count=91
+        92=Санчо Панса
+        93=Петька
+        94=Власик
+        Count=94
     }
 }
 UselessItems ^{
@@ -3122,6 +3218,29 @@ Script ^{
         908=<color=144,238,144>Светло-зелёный</color> - словно рахишская тина
         909=<color=255,105,180>Розовый</color> - спецагентке бы понравился
         910=<color=135,118,73>Сиреневый</color> - лучший цвет для уроженца Эйпентака, наверное
+        911=Следуй за мной
+        912=Настройка поведения в бою
+        913=Не используй форсаж
+        914=Я буду активировать форсаж
+        915=Используй форсаж
+        916=Я не буду активировать форсаж
+        917=Лети и на станции, и на планеты
+        918=Лети только на планеты
+        919=Пунктом назначения будет ближайшая станция
+        920=Лети только на станции
+        921=Пунктом назначения будет ближайшая планета
+        922=Пунктом назначения будет ближайшая планета или станция
+        923=Продолжай полёт в любом случае
+        924=Улетай, если структуры корпуса будет меньше 50%
+        925=Улетай, если структуры корпуса будет меньше 75%
+        926=Я продолжу полёт, пока структура корпуса не опустится ниже 25%
+        927=Улетай, если структуры корпуса будет меньше 25%
+        928=Я продолжу полёт, пока структура корпуса не опустится ниже 50%
+        929=Я продолжу полёт, пока структура корпуса не опустится ниже 75%
+        930=Я продолжу полёт, пока не получу указаний от вас
+        931=Хозяин, вы можете указать мне, в какой ситуации я должен буду немедленно покинуть космическое пространство и сесть на ближайший объект. Кроме того, вы можете указать, куда мне садиться и могу ли я использовать при этом форсаж.<br><br>Текущие правила:<br><0>
+        932=
+        933=Пожалуй, не до этого сейчас
         ForTrancs=<color=255,79,0> (для транклюкаторов)</color>
         NPCsTrancTalks ^{
             HostileRelation=Мой хозяин <Ship> желает вашей скорейшей смерти, но прямо сейчас у меня нет времени исполнять его волю. Пока что.
