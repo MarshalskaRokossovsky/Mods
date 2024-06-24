@@ -1,0 +1,99 @@
+ShipInfo ^{
+    AddInfo ^{
+        CustomInfos ^{
+            FixHulls ^{
+                Description=Фикс гигакорпусов
+                Icon=1
+                Name=-
+                OnActCode ^{
+                    01=if(ScriptItemActionType(t_OnStep))
+                    02 ^{
+                        01=ShipCustomShipInfoData(0,CurInfo(),1,0);
+                    }
+                    03=else
+                    04 ^{
+                        01=if(!CurrentForm('AutoSearch') && !CurrentForm('Info') && !CurrentForm('EquipmentShop')) exit;
+                        02=if(ShipCustomShipInfoData(0,CurInfo(),1) == 1) exit;
+                        03=ShipCustomShipInfoData(0,CurInfo(),1,1);
+                        04=int i,j,l;
+                        05=for(i=0;GalaxyStars()>i;i=i+1)
+                        06 ^{
+                            01=dword star = GalaxyStar(i);
+                            02=if(StarOwner(star) == 1 && !StarBattle(star)) continue;
+                            03=for(j=0;StarShips(star)>j;j=j+1)
+                            04 ^{
+                                01=dword obje = StarShips(star,j);
+                                02=if(ShipTypeN(obje) < 6) continue;
+                                03=for(l=0;ShopItems(obje)>l;l=l+1)
+                                04 ^{
+                                    01=dword item = ShopItems(obje,l), acryn = 0;
+                                    02=if(item < 1) continue;
+                                    03=int flag = 0, seriya = 0, type = 0;
+                                    04=if(ItemCost(item) < 100000000) continue;
+                                    05=if(ItemType(item) != t_Hull) continue;
+                                    06=if((ItemSize(item) / 5) > ItemSize(ShipEqInSlot(Player(),t_Hull))) flag = 1;
+                                    07=else flag = ItemSize(item);
+                                    08=if(EqSpecial(item) != -1) acryn = EqSpecial(item);
+                                    09=if(HullSeries(item) != -1) seriya = HullSeries(item);
+                                    10=type = HullType(item);
+                                    11=int race = ItemOwner(item),int tech = ItemLevel(item);
+                                    12=GetItemFromShop(item);
+                                    13=FreeItem(item);
+                                    14=if(flag == 1) flag = round(ItemSize(ShipEqInSlot(Player(),t_Hull)) * Rnd(80,120) / 100);
+                                    15=if(!seriya) dword item2 = CreateHull(type,flag,Rnd(GalaxyTechLevel()-2,GalaxyTechLevel()),race);
+                                    16=else item2 = CreateHull(type,flag,tech,race,seriya);
+                                    17=if(acryn) SpecialToEquipment(item2,acryn);
+                                    18=AddItemToShop(obje,item2);
+                                }
+                            }
+                            05=for(j=0;StarPlanets(star)>j;j=j+1)
+                            06 ^{
+                                01=obje = StarPlanets(star,j);
+                                02=if(PlanetOwner(obje) > 4) continue;
+                                03=for(l=0;ShopItems(obje)>l;l=l+1)
+                                04 ^{
+                                    01=item = ShopItems(obje,l);
+                                    02=if(item < 1) continue;
+                                    03=acryn = 0;
+                                    04=flag = 0;
+                                    05=seriya = 0;
+                                    06=type = 0;
+                                    07=if(ItemCost(item) < 100000000) continue;
+                                    08=if(ItemType(item) != t_Hull) continue;
+                                    09=if((ItemSize(item) / 5) > ItemSize(ShipEqInSlot(Player(),t_Hull))) flag = 1;
+                                    10=else flag = ItemSize(item);
+                                    11=if(EqSpecial(item) != -1) acryn = EqSpecial(item);
+                                    12=if(HullSeries(item) != -1) seriya = HullSeries(item);
+                                    13=type = HullType(item);
+                                    14=race = ItemOwner(item);
+                                    15=tech = ItemLevel(item);
+                                    16=GetItemFromShop(item);
+                                    17=FreeItem(item);
+                                    18=if(flag == 1) flag = round(ItemSize(ShipEqInSlot(Player(),t_Hull)) * Rnd(80,120) / 100);
+                                    19=if(!seriya) item2 = CreateHull(type,flag,Rnd(GalaxyTechLevel()-2,GalaxyTechLevel()),race);
+                                    20=else item2 = CreateHull(type,flag,tech,race,seriya);
+                                    21=if(acryn) SpecialToEquipment(item2,acryn);
+                                    22=AddItemToShop(obje,item2);
+                                }
+                            }
+                        }
+                    }
+                }
+                OnActCodeTypes=t_OnEnteringForm,t_OnReEnteringForm,t_OnStep
+                OnActStepTypes=0
+            }
+            FixPBGov ^{
+                Description=Фикс разговора на ПБ
+                Icon=1
+                Name=-
+                OnActCode ^{
+                    01=if(!ShipInPirateClan(Player())) exit;
+                    02=if(CurrentForm() != 'RuinsTalk') exit;
+                    03=if(ShipType(GetShipRuins(Player())) != 'PB') exit;
+                    04=GotoGov(0);
+                }
+                OnActCodeTypes=t_OnStep,t_OnEnteringForm,t_OnLeavingForm,t_OnReEnteringForm
+            }
+        }
+    }
+}
